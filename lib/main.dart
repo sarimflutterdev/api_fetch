@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:api_fetching/MyServices.dart';
+import 'package:api_fetching/description.dart';
 import 'package:api_fetching/reusable_widget.dart';
 import 'package:flutter/material.dart';
 
@@ -30,6 +31,16 @@ class MyHome extends StatefulWidget {
 
 class _MyHomeState extends State<MyHome> {
 
+  int num =1;
+
+  void increment(){
+    num = num+1;
+  }
+
+  void decrement(){
+    num = num-1;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,39 +49,73 @@ class _MyHomeState extends State<MyHome> {
           child: SingleChildScrollView(
             scrollDirection: Axis.vertical,
             physics: const ScrollPhysics(),
-            child: FutureBuilder(
-              future: services.apifetch(),
-              builder: (BuildContext context, AsyncSnapshot snapshot) {
+            child: Column(
+              children: [
 
-              if(snapshot.hasData){
+                Container(
+                  width: double.infinity,
+                  margin: EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      GestureDetector(
+                          onTap:(){
+                         setState(() {
+                           if(num>1){
+                             decrement();
+                           }
+                           else{
+                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Already on First Page")));
 
-                Map map = jsonDecode(snapshot.data);
-                List data = map["tv_shows"];
+                           }
+                         });
+            },
+                          child: Icon(Icons.minimize)),
+                      Text("${num}"),
+                      GestureDetector(
+                          onTap: (){
+                            setState(() {
+                              increment();
+                            });
+                          },
+                          child: Icon(Icons.add)),
+                    ],
+                  ),
+                ),
 
-                return ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: data.length,
-                  itemBuilder: (context, index) {
-                return GestureDetector(
-                    onTap: (){
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${data[index]["name"]}")));
-                    },
-                    child: main_container(image: '${data[index]["image_thumbnail_path"]}', name: '${data[index]["name"]}'));
-                },);
-              }
+                FutureBuilder(
+                  future: services.apifetch(num),
+                  builder: (BuildContext context, AsyncSnapshot snapshot) {
 
-              if(snapshot.hasError){
-                return Center(child: Icon(Icons.error_outline),);
-              }
+                  if(snapshot.hasData){
 
-              if(snapshot.connectionState == ConnectionState.waiting){
-                return CircularProgressIndicator();
+                    Map map = jsonDecode(snapshot.data);
+                    List data = map["tv_shows"];
 
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: data.length,
+                      itemBuilder: (context, index) {
+                    return GestureDetector(
+                        onTap: (){
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => Desc(id: data[index]["id"]),));
+                        },
+                        child: main_container(image: '${data[index]["image_thumbnail_path"]}', name: '${data[index]["name"]}'));
+                    },);
+                  }
 
-              }
+                  if(snapshot.hasError){
+                    return Center(child: Icon(Icons.error_outline),);
+                  }
 
-              return Container();
-            },),
+                  if(snapshot.connectionState == ConnectionState.waiting){
+                    return CircularProgressIndicator();
+                  }
+
+                  return Container();
+                },),
+              ],
+            ),
           )),
     );
   }
